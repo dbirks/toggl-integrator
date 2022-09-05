@@ -21,8 +21,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
@@ -49,8 +51,7 @@ to quickly create a Cobra application.`,
 			fmt.Println(err)
 		}
 
-		fmt.Println(togglTimeEntries)
-
+		printTable(togglTimeEntries)
 	},
 }
 
@@ -90,4 +91,16 @@ func getTogglTimeData() []byte {
 	}
 
 	return body
+}
+
+// Print the time entries as a formatted table to stdout
+func printTable(timeEntries []TimeEntry) {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Start", "Stop", "Description", "Duration"})
+
+	for _, entry := range timeEntries {
+		str := []string{entry.Start.String(), entry.Stop.String(), entry.Description, strconv.Itoa(entry.Duration)}
+		table.Append(str)
+	}
+	table.Render()
 }
