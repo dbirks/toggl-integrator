@@ -46,11 +46,13 @@ to quickly create a Cobra application.`,
 		togglProjectsJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/projects")
 		togglTimeJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/time_entries")
 
+		// Load just the json we want into the togglProjects object
 		err = json.Unmarshal([]byte(togglProjectsJson), &togglProjects)
 		if err != nil {
 			fmt.Println(err)
 		}
 
+		// Load just the json we want into the togglTimeEntries object
 		err = json.Unmarshal([]byte(togglTimeJson), &togglTimeEntries)
 		if err != nil {
 			fmt.Println(err)
