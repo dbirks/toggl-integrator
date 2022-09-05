@@ -41,11 +41,11 @@ to quickly create a Cobra application.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 
-		togglTimeData := getTogglTimeData()
+		togglTimeJson := getTogglTimeJson()
 
 		var togglTimeEntries []TimeEntry
 
-		err := json.Unmarshal([]byte(togglTimeData), &togglTimeEntries)
+		err := json.Unmarshal([]byte(togglTimeJson), &togglTimeEntries)
 
 		if err != nil {
 			fmt.Println(err)
@@ -66,7 +66,7 @@ func init() {
 	getCmd.AddCommand(togglCmd)
 }
 
-func getTogglTimeData() []byte {
+func getTogglTimeJson() []byte {
 	togglUsername := os.Getenv("TOGGL_USERNAME")
 	togglPassword := os.Getenv("TOGGL_PASSWORD")
 
