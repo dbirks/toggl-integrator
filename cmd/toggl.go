@@ -16,7 +16,12 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -32,7 +37,53 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("toggl called")
+		// fmt.Println("toggl called")
+		// getTogglTimes()
+		togglUsername := os.Getenv("TOGGL_USERNAME")
+		togglPassword := os.Getenv("TOGGL_PASSWORD")
+		// println(togglUsername)
+		// println(togglPassword)
+
+		req, err := http.NewRequest("GET",
+			"https://api.track.toggl.com/api/v9/me/time_entries", nil)
+		if err != nil {
+			print(err)
+		}
+		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+		req.SetBasicAuth(togglUsername, togglPassword)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			print(err)
+		}
+
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			print(err)
+		}
+
+		// fmt.Print(string(body))
+
+		type TimeEntry struct {
+			Start       time.Time `json:"start"`
+			Stop        time.Time `json:"stop"`
+			Description string    `json:"description"`
+			Duration    int       `json:"duration"`
+		}
+
+		var togglApiResponse []TimeEntry
+
+		// err := json.Unmarshal([]byte(body), &togglApiResponse)
+		json.Unmarshal([]byte(body), &togglApiResponse)
+
+		// if err != nil {
+		// 	fmt.Println(err)
+		// }
+
+		fmt.Println(togglApiResponse)
+
 	},
 }
 
@@ -48,4 +99,9 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// togglCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func getTogglTimes() {
+	fmt.Println("Hi mom")
+
 }
