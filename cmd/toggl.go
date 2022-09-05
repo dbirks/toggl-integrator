@@ -18,8 +18,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -41,12 +39,19 @@ to quickly create a Cobra application.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 
-		togglTimeJson := getTogglTimeJson()
-
+		var togglProjects []TogglProject
 		var togglTimeEntries []TimeEntry
+		var err error
 
-		err := json.Unmarshal([]byte(togglTimeJson), &togglTimeEntries)
+		togglProjectsJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/projects")
+		togglTimeJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/time_entries")
 
+		err = json.Unmarshal([]byte(togglProjectsJson), &togglProjects)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = json.Unmarshal([]byte(togglTimeJson), &togglTimeEntries)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -62,35 +67,14 @@ type TimeEntry struct {
 	Duration    int       `json:"duration"`
 }
 
-func init() {
-	getCmd.AddCommand(togglCmd)
+type TogglProject struct {
+	Name  string `json:"name"`
+	Id    int32  `json:"id"`
+	Color string `json:"color"`
 }
 
-func getTogglTimeJson() []byte {
-	togglUsername := os.Getenv("TOGGL_USERNAME")
-	togglPassword := os.Getenv("TOGGL_PASSWORD")
-
-	req, err := http.NewRequest("GET",
-		"https://api.track.toggl.com/api/v9/me/time_entries", nil)
-	if err != nil {
-		print(err)
-	}
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	req.SetBasicAuth(togglUsername, togglPassword)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		print(err)
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		print(err)
-	}
-
-	return body
+func init() {
+	getCmd.AddCommand(togglCmd)
 }
 
 // Print the time entries as a formatted table to stdout
