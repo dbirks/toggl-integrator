@@ -59,7 +59,7 @@ to quickly create a Cobra application.`,
 		}
 
 		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+		togglResponse, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			print(err)
 		}
@@ -73,16 +73,16 @@ to quickly create a Cobra application.`,
 			Duration    int       `json:"duration"`
 		}
 
-		var togglApiResponse []TimeEntry
+		var togglTimeEntries []TimeEntry
 
 		// err := json.Unmarshal([]byte(body), &togglApiResponse)
-		json.Unmarshal([]byte(body), &togglApiResponse)
+		json.Unmarshal([]byte(togglResponse), &togglTimeEntries)
 
 		// if err != nil {
 		// 	fmt.Println(err)
 		// }
 
-		fmt.Println(togglApiResponse)
+		fmt.Println(togglTimeEntries)
 
 	},
 }
