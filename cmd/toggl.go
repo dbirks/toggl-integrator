@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -39,34 +40,47 @@ to quickly create a Cobra application.`,
 
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var togglProjects []TogglProject
-		var togglTimeEntries []TimeEntry
+		var togglProjects = []TogglProject{}
+		var togglTimeEntries = []TogglTimeEntry{}
 		var err error
 
 		togglProjectsJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/projects")
-		togglTimeJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/time_entries")
+		togglTimeEntriesJson := queryTogglApi("https://api.track.toggl.com/api/v9/me/time_entries")
 
-		// Load just the json we want into the togglProjects object
 		err = json.Unmarshal([]byte(togglProjectsJson), &togglProjects)
 		if err != nil {
-			fmt.Println(err)
+			log.WithError(err).Fatal("Unable to unmarshal the projects json.")
 		}
 
 		// Load just the json we want into the togglTimeEntries object
-		err = json.Unmarshal([]byte(togglTimeJson), &togglTimeEntries)
+		err = json.Unmarshal([]byte(togglTimeEntriesJson), &togglTimeEntries)
 		if err != nil {
-			fmt.Println(err)
+			log.WithError(err).Fatal("Unable to unmarshal the time entries json.")
+		}
+
+		// Lookup ProjectName based on the ProjectId, and add it to each object in the array
+		for index, togglTimeEntry := range togglTimeEntries {
+
+			// Find the project name for the project id in the togglTimeEntries
+			for _, togglProject := range togglProjects {
+				if togglProject.Id == togglTimeEntry.ProjectId {
+					togglTimeEntries[index].ProjectName = togglProject.Name
+				}
+			}
+
 		}
 
 		printTable(togglTimeEntries)
 	},
 }
 
-type TimeEntry struct {
+type TogglTimeEntry struct {
 	Start       time.Time `json:"start"`
 	Stop        time.Time `json:"stop"`
 	Description string    `json:"description"`
 	Duration    int       `json:"duration"`
+	ProjectId   int32     `json:"project_id"`
+	ProjectName string
 }
 
 type TogglProject struct {
@@ -76,16 +90,23 @@ type TogglProject struct {
 }
 
 func init() {
+	log.SetLevel(log.InfoLevel)
+
+	// Cobra
 	getCmd.AddCommand(togglCmd)
 }
 
 // Print the time entries as a formatted table to stdout
-func printTable(timeEntries []TimeEntry) {
+func printTable(timeEntries []TogglTimeEntry) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Start", "Stop", "Description", "Duration"})
+	table.SetHeader([]string{"Start", "Stop", "Description", "Duration", "Project"})
 
 	for _, entry := range timeEntries {
-		str := []string{entry.Start.String(), entry.Stop.String(), entry.Description, strconv.Itoa(entry.Duration)}
+
+		log.Trace(fmt.Sprintf("proj name::::: %s", entry.ProjectName))
+
+		str := []string{entry.Start.String(), entry.Stop.String(), entry.Description, strconv.Itoa(entry.Duration), entry.ProjectName}
+		log.Trace(str)
 		table.Append(str)
 	}
 	table.Render()
